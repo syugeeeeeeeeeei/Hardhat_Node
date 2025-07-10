@@ -20,5 +20,6 @@
     "ts-node": ">=8.0.0",
     "typescript": "~5.0.4",
     "viem": "^2.7.6"
-  }
+  },
+  "packageManager": "yarn@4.9.2"
 }

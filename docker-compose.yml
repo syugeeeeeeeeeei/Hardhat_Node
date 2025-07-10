@@ -33,13 +33,12 @@ services:
       dockerfile: Dockerfile
     container_name: local_hardhat
     # rootではなくnodeユーザーで実行
-    user: "node"
     # 作業ディレクトリを指定
-    working_dir: /home/node/app
+    working_dir: /app
     # ローカルのHardhatプロジェクトをコンテナにマウント
     volumes:
-      - ./hardhat:/home/node/app
-      - ./hardhat/node_modules:/home/node/app/node_modules
+      - ./hardhat:/app
+      - ./hardhat/node_modules:/app/node_modules
     # Anvilが起動してからHardhatが起動するように依存関係を設定
     depends_on:
       - anvil
