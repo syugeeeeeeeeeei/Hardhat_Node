@@ -43,5 +43,5 @@ services:
     tty: true
     stdin_open: true
 
-  volumes:
-    arlocal_data: # ArLocalのデータ保存用ボリューム
+volumes:
+  arlocal_data: # ArLocalのデータ保存用ボリューム
