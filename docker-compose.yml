@@ -39,6 +39,7 @@ services:
     # ローカルのHardhatプロジェクトをコンテナにマウント
     volumes:
       - ./hardhat:/home/node/app
+      - ./hardhat/node_modules:/home/node/app/node_modules
     # Anvilが起動してからHardhatが起動するように依存関係を設定
     depends_on:
       - anvil
