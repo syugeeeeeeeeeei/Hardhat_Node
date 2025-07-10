@@ -28,7 +28,9 @@ services:
   # Hardhat 開発環境サービス
   hardhat:
     # Node.jsの公式イメージを使用
-    image: node:lts
+    build:
+      context: ./hardhat
+      dockerfile: Dockerfile
     container_name: local_hardhat
     # rootではなくnodeユーザーで実行
     user: "node"
