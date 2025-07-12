@@ -23,7 +23,6 @@ async function main() {
 	await publicClient.waitForTransactionReceipt({ hash });
 	console.log("🎉 更新が完了しました！");
 
-
 	// 4. 再度、状態を読み取って値が更新されたことを確認
 	const updatedValue = await storage.read.retrieve();
 	console.log(`📄 更新後の値: ${updatedValue}`);
