@@ -1,45 +1,44 @@
-// commands/project_delete_cli.ts
+// commands/project_remove_cli.ts
+import chalk from 'chalk';
 import * as fs from 'fs';
 import inquirer from 'inquirer';
 import * as path from 'path';
-import { getProjectName } from './project_cli_utils'; // 既存のユーティリティを再利用
+import { selectProjects } from './cli_utils';
 
-async function deleteProject() {
-	// コマンドラインから渡されたプロジェクト名を取得
+async function main() {
 	const projectNameCLI = process.argv[2];
 
 	try {
-		// 既存の関数を使い、引数がなければインタラクティブにプロジェクトを選択
-		const projectName = await getProjectName(projectNameCLI);
-		const projectPath = path.resolve(__dirname, '../projects', projectName);
+		const selectedProjects = await selectProjects(projectNameCLI, "削除するプロジェクトをスペースキーで選択してください:");
 
-		// 削除確認のプロンプト
-		const { confirm } = await inquirer.prompt([
-			{
-				type: 'confirm',
-				name: 'confirm',
-				message: `本当にプロジェクト '${projectName}' を削除しますか？この操作は取り消せません。`,
-				default: false, // デフォルトは 'No'
-			},
-		]);
+		console.log(chalk.bold.yellow(`\n🗑️ 以下のプロジェクトを削除します: [${selectedProjects.join(', ')}]`));
 
-		if (confirm) {
-			console.log(`\n🗑️ プロジェクト '${projectName}' を削除しています...`);
-			fs.rmSync(projectPath, { recursive: true, force: true });
-			console.log(`✅ プロジェクト '${projectName}' は正常に削除されました。`);
-		} else {
-			console.log('\n❌ 削除をキャンセルしました。');
+		for (const projectName of selectedProjects) {
+			const projectPath = path.resolve(__dirname, '../projects', projectName);
+
+			// プロジェクトごとに削除確認
+			const { confirm } = await inquirer.prompt([
+				{
+					type: 'confirm',
+					name: 'confirm',
+					message: `本当にプロジェクト '${chalk.cyan(projectName)}' を削除しますか？この操作は取り消せません。`,
+					default: false,
+				},
+			]);
+
+			if (confirm) {
+				fs.rmSync(projectPath, { recursive: true, force: true });
+				console.log(chalk.green(`  ✅ プロジェクト '${projectName}' を削除しました。`));
+			} else {
+				console.log(chalk.gray(`  ❌ プロジェクト '${projectName}' の削除をキャンセルしました。`));
+			}
 		}
+		console.log(chalk.bold.green('\n✨ 全ての削除処理が完了しました。'));
 
 	} catch (error: any) {
-		// プロジェクトが存在しない場合のエラーをハンドリング
-		if (error.message.includes("プロジェクトが見つかりません")) {
-			console.error(`\n🔴 削除対象のプロジェクトがありません。`);
-		} else {
-			console.error(`\n🔴 エラーが発生しました: ${error.message}`);
-		}
+		console.error(chalk.red(`\n🔴 エラーが発生しました: ${error.message}`));
 		process.exit(1);
 	}
 }
 
-deleteProject();
+main();
