@@ -1,15 +1,26 @@
-import "@nomicfoundation/hardhat-ethers";
-import type { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-ignition-ethers";
+import "@nomicfoundation/hardhat-toolbox";
+import { HardhatUserConfig } from "hardhat/config";
 
 const config: HardhatUserConfig = {
+  defaultNetwork: "hardhat",
   solidity: {
-    version : "0.8.20",
-    settings:{
-      optimizer:{
+    version: "0.8.24",
+    settings: {
+      optimizer: {
         enabled: true,
-      }
-    }
+        runs: 200,
+      },
+    },
   },
+
+  paths: {
+    sources: "./projects/**/contracts", // projects以下の全てのcontractsディレクトリを対象
+    tests: "./test",
+    cache: "./dist/cache",
+    artifacts: "./dist/artifacts",
+  },
+
   networks: {
     // "anvil" という名前でネットワーク設定を追加
     anvil: {
