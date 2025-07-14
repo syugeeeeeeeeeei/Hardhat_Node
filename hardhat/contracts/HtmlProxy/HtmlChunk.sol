@@ -1,22 +1,28 @@
-// contracts/HtmlChunk.sol
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.20;
 
 /**
  * @title HtmlChunk
- * @dev Stores a piece (chunk) of a larger HTML string along with its ID.
+ * @dev 分割されたHTMLテキストの一部と、その順序を識別するためのIDを保持するコントラクト。
  */
 contract HtmlChunk {
-    uint256 public immutable id;
-    string public chunk;
+    /**
+     * @dev 分割されたテキストデータ。
+     */
+    string public textChunk;
 
     /**
-     * @dev Sets the ID and the HTML chunk.
-     * @param _id The identifier for sorting/ordering.
-     * @param _chunk The chunk of the HTML string.
+     * @dev テキストの順序を示すID（0から始まるインデックス）。
      */
-    constructor(uint256 _id, string memory _chunk) {
-        id = _id;
-        chunk = _chunk;
+    uint256 public chunkId;
+
+    /**
+     * @dev コントラクトのデプロイ時に、IDとテキストチャンクを設定します。
+     * @param _chunkId このチャンクの順序を示すID。
+     * @param _textChunk このコントラクトが保持するテキストの断片。
+     */
+    constructor(uint256 _chunkId, string memory _textChunk) {
+        chunkId = _chunkId;
+        textChunk = _textChunk;
     }
 }

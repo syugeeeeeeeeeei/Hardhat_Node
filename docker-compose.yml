@@ -2,13 +2,14 @@ services:
   # Foundry Anvil サービス
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
-    command: ["anvil", "--host", "0.0.0.0"]
+    entrypoint: /bin/sh
+    command: -c "anvil --host 0.0.0.0 --block-base-fee-per-gas 0"
     ports:
       - "8545:8545"
     container_name: local_anvil
 
   arlocal:
-      image: node:22-slim # Node.jsのイメージを使用（ArLocalの動作に必要なため）
+      image: node:22 # Node.jsのイメージを使用（ArLocalの動作に必要なため）
       container_name: arlocal-instance
       ports:
         - "1984:1984" # ArLocalのデフォルトポートをホストに公開
@@ -23,6 +24,7 @@ services:
         timeout: 5s
         retries: 5
         start_period: 10s
+
 
   # Hardhat 開発環境サービス
   hardhat:
@@ -39,6 +41,7 @@ services:
       - anvil
     tty: true
     stdin_open: true
+
 
 volumes:
   arlocal_data: # ArLocalのデータ保存用ボリューム

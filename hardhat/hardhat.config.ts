@@ -1,8 +1,15 @@
-import "@nomicfoundation/hardhat-toolbox-viem";
+import "@nomicfoundation/hardhat-ethers";
 import type { HardhatUserConfig } from "hardhat/config";
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.28",
+  solidity: {
+    version : "0.8.20",
+    settings:{
+      optimizer:{
+        enabled: true,
+      }
+    }
+  },
   networks: {
     // "anvil" という名前でネットワーク設定を追加
     anvil: {
