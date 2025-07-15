@@ -5,7 +5,7 @@ import * as path from 'path';
 
 async function listProjects() {
 	const projectsDir = path.resolve(__dirname, '../projects');
-
+	// example.ts	
 	try {
 		const availableProjects = fs.readdirSync(projectsDir, { withFileTypes: true })
 			.filter(dirent => dirent.isDirectory())

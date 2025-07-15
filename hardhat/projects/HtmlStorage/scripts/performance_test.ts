@@ -5,6 +5,8 @@ import fs from "fs/promises";
 import { ethers } from "hardhat";
 import path from "path";
 import { performance } from "perf_hooks";
+// ✨ プログレスバーライブラリをインポート
+import * as cliProgress from "cli-progress";
 
 // =============================================================================
 // 📝 テスト設定 (ここを編集してテスト内容を変更できます)
@@ -30,8 +32,7 @@ const CHUNK_SIZES_TO_TEST = [
 ];
 
 // 結果を出力するディレクトリ
-const OUTPUT_DIR = "./contract_benchmark";
-
+const OUTPUT_DIR = path.resolve(__dirname, "./contract_benchmark");
 
 // =============================================================================
 // 🛠️ ヘルパー関数
@@ -117,19 +118,30 @@ export async function main() {
 			}
 			console.log(`      - Contract deployed. Gas used: ${deployReceipt?.gasUsed.toString() ?? 'N/A'}`);
 
-			// チャンクをアップロード
-			const uploadPromises = [];
+			// ✨ プログレスバーを初期化
+			const progressBar = new cliProgress.SingleBar({
+				format: '      - Uploading chunks |{bar}| {percentage}% || {value}/{total} Chunks',
+				barCompleteChar: '\u2588',
+				barIncompleteChar: '\u2591',
+				hideCursor: true
+			});
+			progressBar.start(chunks.length, 0);
+
+
+			// チャンクをアップロード (ループを簡潔化)
 			for (let i = 0; i < chunks.length; i++) {
-				const tx:TransactionResponse = await htmlStorage.addChunk(chunks[i]);
-				uploadPromises.push(tx.wait());
-				// Note: 1つずつ実行してガス代を確実に計測
-				const receipt = await tx.wait();
+				const tx: TransactionResponse = await htmlStorage.addChunk(chunks[i]);
+				const receipt = await tx.wait(); // トランザクションの完了を待つ
 				if (receipt) {
 					totalGasUsed += receipt.gasUsed;
 					totalFeeInEth += receipt.gasUsed * receipt.gasPrice;
 				}
+				// ✨ プログレスバーを更新
+				progressBar.increment();
 			}
-			await Promise.all(uploadPromises);
+
+			// ✨ プログレスバーを停止
+			progressBar.stop();
 
 			const t1_upload = performance.now();
 			const uploadTime = (t1_upload - t0_upload) / 1000;
@@ -192,4 +204,12 @@ export async function main() {
 		}
 	}
 	console.log("\n\n🎉 All benchmark tests completed!");
+}
+
+// Allow the script to be run directly
+if (require.main === module) {
+	main().catch(error => {
+		console.error(error);
+		process.exit(1);
+	});
 }
