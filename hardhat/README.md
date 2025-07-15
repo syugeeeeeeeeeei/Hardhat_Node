@@ -55,7 +55,6 @@ hardhat/
 
 これらのファイルを `projects/[プロジェクト名]/` というディレクトリにまとめることで、関心事を明確に分離し、再利用性と管理性を高めています。
 
-
 ## 🚀 利用方法
 
 `Makefile` に定義されたコマンドを使用することで、プロジェクトのライフサイクル全体を簡単に管理できます。コマンドの多くは、引数を省略すると対話形式のウィザードが起動し、選択肢から対象を選ぶことができます。
@@ -127,6 +126,20 @@ make psc
 
 ```sh
 make psc P=MyProject S=path/to/MyScript.ts
+```
+
+### 🔹 プロジェクトのファイル統合
+
+指定したプロジェクト内のすべてのファイルを一つのテキストファイルに統合します。出力先は `dist/unified_txt/<project_name>/project_uni.txt` です。`P` 変数を省略すると、ウィザードで対象プロジェクトを選択できます。
+
+```sh
+# 'HtmlStorage' プロジェクトのファイルを統合
+make project-unify P=HtmlStorage
+# or alias
+make pun P=HtmlStorage
+
+# 引数を省略して対話形式で選択
+make pun
 ```
 
 ### 🔹 プロジェクトの削除

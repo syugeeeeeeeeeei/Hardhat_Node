@@ -1,6 +1,6 @@
 # .PHONY: ターゲットがファイル名と衝突しないように設定
 # これにより、同名のファイルが存在してもコマンドが正しく実行されます。
-.PHONY: all help init project-compile pco project-deploy pde project-script psc project-list pls project-remove prm
+.PHONY: all help init project-compile pco project-deploy pde project-script psc project-list pls project-remove prm project-unify pun
 
 # デフォルトターゲット: `make` のみ実行された場合はヘルプを表示
 all: help
@@ -10,14 +10,15 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Core Commands:"
-	@echo "  project-compile (pco)              Compile all contracts."
+	@echo "  project-compile (pco)          Compile all contracts."
 	@echo ""
 	@echo "Project Commands:"
-	@echo "  init [NAME=<project>]             Initialize a new hardhat project."
-	@echo "  project-list (pls)              List all available projects."
+	@echo "  init [NAME=<project>]          Initialize a new hardhat project."
+	@echo "  project-list (pls)             List all available projects."
 	@echo "  project-deploy (pde) [P=<project>] [M=<module>]  Compile and deploy contracts."
 	@echo "  project-script (psc) [P=<project>] [S=<script>]  Compile and run a script."
 	@echo "  project-remove (prm) [P=<project>]  Delete a project."
+	@echo "  project-unify (pun) [P=<project>]   Unify all files in a project into a single text file." # <- 変更点
 
 # 新しいコンパイルターゲット
 project-compile:
@@ -52,3 +53,8 @@ pls: project-list
 project-remove:
 	@yarn node -r esbuild-register commands/project_remove_cli.ts $(P)
 prm: project-remove
+
+# プロジェクトファイルの統合 (ここから追加)
+project-unify:
+	@yarn node -r esbuild-register commands/project_unify_cli.ts $(P)
+pun: project-unify
