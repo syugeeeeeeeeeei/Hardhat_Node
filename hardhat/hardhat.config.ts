@@ -1,6 +1,7 @@
 import "@nomicfoundation/hardhat-ignition-ethers";
 import "@nomicfoundation/hardhat-toolbox";
-import 'esbuild-register/dist/node';
+import "dotenv/config"; // dotenvをインポート
+import "esbuild-register/dist/node";
 import { HardhatUserConfig } from "hardhat/config";
 
 // タスクファイルをインポート
@@ -8,8 +9,14 @@ import "./commands/tasks/compile";
 import "./commands/tasks/deploy";
 import "./commands/tasks/script";
 
+// 環境変数からデプロイヤーのプライベートキーを取得。なければデフォルトのテストキーを使用。
+// このキーはAnvil/Hardhatのデフォルトアカウントのものです。
+const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+
+
 const config: HardhatUserConfig = {
-  defaultNetwork: "anvil",
+  // デフォルトの接続先をgethに変更
+  defaultNetwork: "geth",
   solidity: {
     version: "0.8.24",
     settings: {
@@ -28,9 +35,17 @@ const config: HardhatUserConfig = {
     ignition: "./dist/ignition",
   },
   networks: {
+    // Gethへの接続設定を追加
+    geth: {
+      url: "http://geth:8545", // docker-composeのサービス名を指定
+      chainId: 1337, // genesis.jsonで指定したChain ID
+      accounts: [DEPLOYER_PRIVATE_KEY],
+    },
+    // Anvilへの接続設定を修正
     anvil: {
-      url: "http://anvil:8545",
+      url: "http://anvil:8545", // docker-compose.ymlのポート変更に合わせて修正
       chainId: 31337,
+      accounts: [DEPLOYER_PRIVATE_KEY],
       timeout: 30 * 60 * 1000
     },
   },

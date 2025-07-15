@@ -1,47 +1,79 @@
 services:
-  # Foundry Anvil サービス
+  # Geth サービス (新規追加)
+  geth:
+    image: ethereum/client-go:stable # 公式の安定版Gethイメージ
+    container_name: local_geth
+    ports:
+      - "8545:8545" # RPCポート
+      - "30303:30303" # P2Pポート
+    volumes:
+      - geth_data:/root/.ethereum # ブロックチェーンデータを永続化
+      - ./geth/genesis.json:/root/genesis.json # ジェネシスファイルをマウント
+    # 起動コマンド
+    # 1. データディレクトリがなければジェネシスブロックで初期化
+    # 2. Gethノードを開発モードで起動
+    command: >
+      sh -c "
+        if [ ! -d /root/.ethereum/geth ]; then
+          geth --datadir /root/.ethereum init /root/genesis.json;
+        fi &&
+        geth --datadir /root/.ethereum \
+          --dev \
+          --dev.period 1 \
+          --http \
+          --http.addr '0.0.0.0' \
+          --http.port 8545 \
+          --http.corsdomain '*' \
+          --http.api 'eth,net,web3,personal' \
+          --ws \
+          --ws.addr '0.0.0.0' \
+          --ws.port 8546 \
+          --ws.origins '*' \
+          --ws.api 'eth,net,web3,personal'
+      "
+
+  # Foundry Anvil サービス (変更なし)
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
     entrypoint: /bin/sh
     command: -c "anvil --host 0.0.0.0 --block-base-fee-per-gas 0 -q"
     ports:
-      - "8545:8545"
+      - "8546:8545" # ポートを8546に変更してGethと重複しないようにする
     container_name: local_anvil
 
   arlocal:
-      image: node:22 # Node.jsのイメージを使用（ArLocalの動作に必要なため）
-      container_name: arlocal-instance
-      ports:
-        - "1984:1984" # ArLocalのデフォルトポートをホストに公開
-      working_dir: /app
-      volumes:
-        - arlocal_data:/app/data # 永続化のためのボリューム
-      command: sh -c "npm install -g arlocal && arlocal --persist-data --data-path /app/data"
-      restart: always # コンテナが終了した場合に自動で再起動
-      healthcheck: # ヘルスチェックの定義
-        test: ["CMD", "curl", "-f", "http://localhost:1984"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
-        start_period: 10s
+    image: node:22
+    container_name: arlocal-instance
+    ports:
+      - "1984:1984"
+    working_dir: /app
+    volumes:
+      - arlocal_data:/app/data
+    command: sh -c "npm install -g arlocal && arlocal --persist --data-path /app/data"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1984"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-
-  # Hardhat 開発環境サービス
+  # Hardhat 開発環境サービス (修正)
   hardhat:
-    # Node.jsの公式イメージを使用
     build:
       context: ./hardhat
       dockerfile: Dockerfile
     container_name: local_hardhat
-    working_dir: /app # working_dirを/appに修正
+    working_dir: /app
     volumes:
       - ./hardhat:/app
       - /app/node_modules
+    # 依存先をanvilからgethに変更
     depends_on:
-      - anvil
+      - geth
     tty: true
     stdin_open: true
 
-
 volumes:
-  arlocal_data: # ArLocalのデータ保存用ボリューム
+  arlocal_data:
+  geth_data: # Gethのデータ保存用ボリュームを追加

@@ -1,19 +1,21 @@
 // scripts/performance_test.ts
 import { Buffer } from "buffer";
-import * as cliProgress from "cli-progress";
 import { TransactionResponse } from "ethers";
 import fs from "fs/promises";
 import { ethers } from "hardhat";
 import path from "path";
 import { performance } from "perf_hooks";
+// ✨ プログレスバーライブラリをインポート
+import * as cliProgress from "cli-progress";
 
 // =============================================================================
-// 📝 テスト設定
+// 📝 テスト設定 (ここを編集してテスト内容を変更できます)
 // =============================================================================
 
 const KILOBYTE = 1024;
 const MEGABYTE = 1024 * KILOBYTE;
 
+// テストする合計テキストサイズ (バイト単位)
 const TOTAL_SIZES_TO_TEST = [
 	100 * KILOBYTE,
 	500 * KILOBYTE,
@@ -22,6 +24,7 @@ const TOTAL_SIZES_TO_TEST = [
 	10 * MEGABYTE,
 ];
 
+// テストするチャンクサイズ (バイト単位)
 const CHUNK_SIZES_TO_TEST = [
 	// 6 * KILOBYTE,
 	// 12 * KILOBYTE,
@@ -33,18 +36,21 @@ const OUTPUT_DIR = path.resolve(__dirname, "./contract_benchmark");
 const CSV_FILENAME = "benchmark_results.csv";
 const CSV_FILEPATH = path.join(OUTPUT_DIR, CSV_FILENAME);
 
-// 🚀 新しい設定: トランザクション間隔と並列処理数
-const TRANSACTION_DELAY_MS = 100; // 各トランザクション間の遅延時間（ミリ秒）
-const CONCURRENT_TRANSACTIONS = 5; // 並行して実行するトランザクション数
 
 // =============================================================================
 // 🛠️ ヘルパー関数
 // =============================================================================
 
+/**
+ * 指定したバイト数のダミー文字列を生成する
+ */
 function generateByteStr(sizeInBytes: number): string {
 	return 'a'.repeat(sizeInBytes);
 }
 
+/**
+ * テキストをUTF-8のバイト数に基づいて安全に分割する
+ */
 function splitTextByBytes(text: string, maxChunkSizeInBytes: number): string[] {
 	const chunks: string[] = [];
 	const buffer = Buffer.from(text, 'utf8');
@@ -58,13 +64,20 @@ function splitTextByBytes(text: string, maxChunkSizeInBytes: number): string[] {
 	return chunks;
 }
 
+/**
+ * バイト数を人間が読みやすい形式 (KB, MB) に変換する
+ */
 function formatBytes(bytes: number): string {
 	if (bytes < KILOBYTE) return `${bytes} B`;
 	if (bytes < MEGABYTE) return `${(bytes / KILOBYTE).toFixed(0)}KB`;
 	return `${(bytes / MEGABYTE).toFixed(0)}MB`;
 }
 
-const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+/**
+ * ✨ 指定した時間(ms)だけ処理を待機するsleep関数
+ */
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 
 // =============================================================================
 // 📊 メインのテスト実行ロジック
@@ -75,7 +88,7 @@ export async function main() {
 
 	await fs.mkdir(OUTPUT_DIR, { recursive: true });
 
-	// ✨ CSVヘッダーを定義
+	// ✨ CSVヘッダーを定義 (IDと平均ガス代を追加)
 	const csvHeaders = [
 		"ID",
 		"Test Case",
@@ -107,6 +120,7 @@ export async function main() {
 			console.log(`▶️  Running test case: ${testCaseName}`);
 			console.log(`======================================================`);
 
+			// ----- 1. 前処理 (テキスト生成と分割) -----
 			const t0_prep = performance.now();
 			const originalText = generateByteStr(totalSize);
 			const chunks = splitTextByBytes(originalText, chunkSize);
@@ -117,12 +131,15 @@ export async function main() {
 			let totalGasUsed = 0n;
 			let totalFeeInEth = 0n;
 
+			// ----- 2. アップロード処理 (デプロイ + データ保存) -----
 			console.log(`[2/5] 📤 Uploading data...`);
 			const t0_upload = performance.now();
 
 			const HtmlStorageFactory = await ethers.getContractFactory("HtmlStorage");
 			const htmlStorage = await HtmlStorageFactory.deploy();
 			await htmlStorage.waitForDeployment();
+			await sleep(100); // ✨ デプロイトランザクション後にsleep
+
 			const deployReceipt = await htmlStorage.deploymentTransaction()?.wait();
 			if (deployReceipt) {
 				totalGasUsed += deployReceipt.gasUsed;
@@ -138,43 +155,23 @@ export async function main() {
 			});
 			progressBar.start(chunks.length, 0);
 
-			// 🚀 トランザクションの並列処理と遅延の導入
-			let activeTransactions = 0; // ✅ ここに移動して初期化
-			const transactionPromises: Promise<void>[] = [];
 			for (let i = 0; i < chunks.length; i++) {
-				transactionPromises.push((async () => {
-					while (true) {
-						if (activeTransactions < CONCURRENT_TRANSACTIONS) {
-							activeTransactions++;
-							try {
-								const tx: TransactionResponse = await htmlStorage.addChunk(chunks[i]);
-								const receipt = await tx.wait();
-								if (receipt) {
-									totalGasUsed += receipt.gasUsed;
-									totalFeeInEth += receipt.gasUsed * receipt.gasPrice;
-								}
-								progressBar.increment();
-								await sleep(TRANSACTION_DELAY_MS);
-							} catch (error) {
-								console.error(`Error sending transaction for chunk ${i}:`, error);
-							} finally {
-								activeTransactions--;
-							}
-							break;
-						} else {
-							await sleep(50);
-						}
-					}
-				})());
+				const tx: TransactionResponse = await htmlStorage.addChunk(chunks[i]);
+				const receipt = await tx.wait();
+				if (receipt) {
+					totalGasUsed += receipt.gasUsed;
+					totalFeeInEth += receipt.gasUsed * receipt.gasPrice;
+				}
+				progressBar.increment();
+				await sleep(100); // ✨ 各チャンクのアップロード後にsleep
 			}
-			await Promise.all(transactionPromises);
-
 			progressBar.stop();
 
 			const uploadTime = (performance.now() - t0_upload) / 1000;
 			console.log(`      - All ${chunks.length} chunks uploaded.`);
 			console.log(`      - Time taken: ${uploadTime.toFixed(3)} seconds`);
 
+			// ----- 3. ダウンロード処理 -----
 			console.log(`[3/5] 📥 Downloading data...`);
 			const t0_download = performance.now();
 			const chunkCount = await htmlStorage.getChunkCount();
@@ -186,6 +183,7 @@ export async function main() {
 			const downloadTime = (performance.now() - t0_download) / 1000;
 			console.log(`      - All ${chunkCount} chunks downloaded.`);
 
+			// ----- 4. 検証 -----
 			console.log(`[4/5] 🔍 Verifying data...`);
 			const retrievedText = retrievedChunks.join('');
 			if (retrievedText === originalText) {
@@ -194,11 +192,13 @@ export async function main() {
 				console.error("      - ❌ Verification FAILED! Data does not match.");
 			}
 
+			// ----- 5. 結果の記録とCSV出力 -----
 			console.log(`[5/5] 🧾 Recording results...`);
 			const totalExecutionTime = (performance.now() - t0_prep) / 1000;
 
+			// ✨ IDと平均ガス代を計算
 			const id = `${totalSizeLabel}_${chunkSizeLabel}`;
-			const totalTransactions = 1 + chunks.length;
+			const totalTransactions = 1 + chunks.length; // 1はデプロイトランザクション分
 			const averageGasPerTx = totalTransactions > 0 ? totalGasUsed / BigInt(totalTransactions) : 0n;
 
 			const results = {
@@ -216,14 +216,13 @@ export async function main() {
 				"Average Gas Per Tx": averageGasPerTx.toString(),
 			};
 
+			// ✨ ヘッダーの順序に合わせて値の配列を作成し、CSV行に変換
 			const csvRow = csvHeaders.map(header => results[header as keyof typeof results]).join(',');
 
+			// ✨ ファイルに追記
 			await fs.appendFile(CSV_FILEPATH, csvRow + '\n');
 			console.log(`      - Results appended to: ${CSV_FILEPATH}`);
-
-			await sleep(2000);
 		}
 	}
 	console.log("\n\n🎉 All benchmark tests completed!");
 }
-
