@@ -31,6 +31,7 @@ const config: HardhatUserConfig = {
     anvil: {
       url: "http://anvil:8545",
       chainId: 31337,
+      timeout: 30 * 60 * 1000
     },
   },
 };
