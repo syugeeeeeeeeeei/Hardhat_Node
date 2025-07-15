@@ -1,6 +1,5 @@
-// commands/project_script_cli.ts
 import chalk from 'chalk';
-import { spawn } from 'child_process';
+import hre from 'hardhat'; // 💡 Hardhat Runtime Environment を直接インポート
 import * as path from 'path';
 import { selectFileInProject, selectProject } from './cli_utils';
 
@@ -26,28 +25,19 @@ async function main() {
 		console.log(`📄 スクリプト: ${fullScriptPath}`);
 		console.log(`\nスクリプトを実行中 (Network: anvil)...`);
 
-		// 💡 spawnのオプションに { shell: true } を追加
-		const hardhatProcess = spawn('yarn', ['hardhat', 'run', fullScriptPath, '--network', 'anvil'], {
-			stdio: 'inherit',
-			shell: true
+		// 💡 hre.run を使ってプログラム的にタスクを実行
+		await hre.run('run', {
+			script: fullScriptPath,
+			network: 'anvil'
 		});
 
-		hardhatProcess.on('close', (code) => {
-			if (code !== 0) {
-				console.error(chalk.red(`\n🔴 Hardhat スクリプト実行がコード ${code} で終了しました。`));
-				process.exit(code || 1);
-			} else {
-				console.log(chalk.green('\n✨ Hardhat スクリプトが正常に完了しました！'));
-			}
-		});
-
-		hardhatProcess.on('error', (err) => {
-			console.error(chalk.red(`\n🔴 Hardhat スクリプト実行中にエラーが発生しました: ${err.message}`));
-			process.exit(1);
-		});
+		console.log(chalk.green('\n✨ Hardhat スクリプトが正常に完了しました！'));
 
 	} catch (error: any) {
 		console.error(chalk.red(`\n🔴 エラー: ${error.message}`));
+		if (error.stack) {
+			console.error(error.stack);
+		}
 		process.exit(1);
 	}
 }

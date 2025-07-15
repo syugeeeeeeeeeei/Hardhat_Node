@@ -1,6 +1,6 @@
-// commands/project_deploy_cli.ts
+import { IgnitionModule } from '@nomicfoundation/ignition-core';
 import chalk from 'chalk';
-import { spawn } from 'child_process';
+import hre from 'hardhat'; // 💡 Hardhat Runtime Environment を直接インポート
 import * as path from 'path';
 import { selectFileInProject, selectProjects } from './cli_utils';
 
@@ -23,29 +23,19 @@ async function deploySingleProject(projectName: string, modulePathCLI?: string) 
 		console.log(`🚀 Ignitionモジュール: ${fullModulePath}`);
 		console.log(`\nデプロイを実行中 (Network: anvil)...`);
 
-		await new Promise<void>((resolve, reject) => {
-			// 💡 spawnのオプションに { shell: true } を追加
-			const hardhatProcess = spawn('yarn', ['hardhat', 'ignition', 'deploy', fullModulePath, '--network', 'anvil'], {
-				stdio: 'inherit',
-				shell: true
-			});
-			hardhatProcess.on('close', (code) => {
-				if (code !== 0) {
-					console.error(chalk.red(`\n🔴 [${projectName}] デプロイが失敗しました。`));
-					reject(new Error(`Deployment failed for ${projectName}`));
-				} else {
-					console.log(chalk.green(`\n✨ [${projectName}] デプロイが正常に完了しました！`));
-					resolve();
-				}
-			});
-			hardhatProcess.on('error', (err) => {
-				console.error(chalk.red(`\n🔴 [${projectName}] エラー: ${err.message}`));
-				reject(err);
-			});
-		});
+		// 💡 モジュールファイルを動的にインポートしてオブジェクトを取得
+		const { default: ignitionModule }: { default: IgnitionModule } = await import(fullModulePath);
+
+		// 💡 Ignitionのデプロイ関数をプログラムとして直接呼び出す
+		await hre.ignition.deploy(ignitionModule, {});
+
+		console.log(chalk.green(`\n✨ [${projectName}] Hardhat Ignition デプロイが正常に完了しました！`));
 
 	} catch (error: any) {
 		console.error(chalk.red(`\n🔴 [${projectName}] デプロイプロセスでエラーが発生しました: ${error.message}`));
+		if (error.stack) {
+			console.error(error.stack);
+		}
 		throw error;
 	}
 }
@@ -54,12 +44,14 @@ async function main() {
 	const projectNameCLI = process.argv[2];
 	const modulePathCLI = process.argv[3];
 	try {
-		const selectedProjects = await selectProjects(projectNameCLI, "デプロイするプロジェクトをスペースキーで選択してください:");
+		const selectedProjects = await selectProjects(projectNameCLI, "デプロイするプロジェクトを選択してください:");
 		console.log(chalk.bold.yellow(`\n🚀 以下のプロジェクトのデプロイを開始します: [${selectedProjects.join(', ')}]`));
+
 		for (const projectName of selectedProjects) {
 			await deploySingleProject(projectName, selectedProjects.length === 1 ? modulePathCLI : undefined);
 		}
 		console.log(chalk.bold.green('\n🎉🎉🎉 選択された全てのプロジェクトのデプロイが完了しました！ 🎉🎉🎉'));
+
 	} catch (error: any) {
 		console.error(chalk.red(`\n❌ デプロイメントが途中で失敗したため、処理を中断しました。`));
 		process.exit(1);
