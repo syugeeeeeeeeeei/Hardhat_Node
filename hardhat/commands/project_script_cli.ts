@@ -2,7 +2,6 @@
 import chalk from 'chalk';
 import { spawn } from 'child_process';
 import * as path from 'path';
-// selectProject (単一選択) をインポートする
 import { selectFileInProject, selectProject } from './cli_utils';
 
 async function main() {
@@ -10,7 +9,6 @@ async function main() {
 	const scriptPathCLI = process.argv[3];
 
 	try {
-		// 単一選択用の関数を呼び出す
 		const projectName = await selectProject(projectNameCLI, "スクリプトを実行するプロジェクトを選択してください:");
 		const projectPath = path.resolve(__dirname, '../projects', projectName);
 
@@ -28,8 +26,10 @@ async function main() {
 		console.log(`📄 スクリプト: ${fullScriptPath}`);
 		console.log(`\nスクリプトを実行中 (Network: anvil)...`);
 
+		// 💡 spawnのオプションに { shell: true } を追加
 		const hardhatProcess = spawn('yarn', ['hardhat', 'run', fullScriptPath, '--network', 'anvil'], {
 			stdio: 'inherit',
+			shell: true
 		});
 
 		hardhatProcess.on('close', (code) => {
