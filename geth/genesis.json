@@ -11,7 +11,8 @@
     "istanbulBlock": 0,
     "berlinBlock": 0,
     "londonBlock": 0,
-    "shanghaiBlock": 0
+    "shanghaiBlock": 0,
+    "terminalTotalDifficulty": 0
   },
   "difficulty": "1",
   "gasLimit": "8000000",

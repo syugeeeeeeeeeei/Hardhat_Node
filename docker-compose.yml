@@ -1,7 +1,7 @@
 services:
-  # Geth サービス (新規追加)
+  # Geth サービス
   geth:
-    image: ethereum/client-go:stable # 公式の安定版Gethイメージ
+    image: ethereum/client-go:stable
     container_name: local_geth
     ports:
       - "8545:8545" # RPCポート
@@ -9,38 +9,41 @@ services:
     volumes:
       - geth_data:/root/.ethereum # ブロックチェーンデータを永続化
       - ./geth/genesis.json:/root/genesis.json # ジェネシスファイルをマウント
-    # 起動コマンド
-    # 1. データディレクトリがなければジェネシスブロックで初期化
-    # 2. Gethノードを開発モードで起動
-    command: >
-      sh -c "
+    # ✨ entrypointを明示的に指定し、commandをシェルスクリプトとして渡す
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - >-
         if [ ! -d /root/.ethereum/geth ]; then
           geth --datadir /root/.ethereum init /root/genesis.json;
         fi &&
-        geth --datadir /root/.ethereum \
-          --dev \
-          --dev.period 1 \
-          --http \
-          --http.addr '0.0.0.0' \
-          --http.port 8545 \
-          --http.corsdomain '*' \
-          --http.api 'eth,net,web3,personal' \
-          --ws \
-          --ws.addr '0.0.0.0' \
-          --ws.port 8546 \
-          --ws.origins '*' \
+        geth --datadir /root/.ethereum
+          --dev
+          --dev.period 1
+          --http
+          --http.addr '0.0.0.0'
+          --http.port 8545
+          --http.corsdomain '*'
+          --http.api 'eth,net,web3,personal'
+          --ws
+          --ws.addr '0.0.0.0'
+          --ws.port 8546
+          --ws.origins '*'
           --ws.api 'eth,net,web3,personal'
-      "
 
-  # Foundry Anvil サービス (変更なし)
+  # Foundry Anvil サービス
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
-    entrypoint: /bin/sh
-    command: -c "anvil --host 0.0.0.0 --block-base-fee-per-gas 0 -q"
-    ports:
-      - "8546:8545" # ポートを8546に変更してGethと重複しないようにする
     container_name: local_anvil
+    ports:
+      - "8546:8545" # ポートをGethと重複しないように変更
+    # ✨ entrypointとcommandの記述をより厳密な形式に修正
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - "anvil --host 0.0.0.0 --block-base-fee-per-gas 0 -q"
 
+  # ArLocal サービス
   arlocal:
     image: node:22
     container_name: arlocal-instance
@@ -49,7 +52,6 @@ services:
     working_dir: /app
     volumes:
       - arlocal_data:/app/data
-    command: sh -c "npm install -g arlocal && arlocal --persist --data-path /app/data"
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:1984"]
@@ -57,8 +59,13 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    # ✨ entrypointを明示的に指定し、commandをシェルスクリプトとして渡す
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - "npm install -g arlocal && arlocal --persist --data-path /app/data"
 
-  # Hardhat 開発環境サービス (修正)
+  # Hardhat 開発環境サービス
   hardhat:
     build:
       context: ./hardhat
@@ -68,12 +75,11 @@ services:
     volumes:
       - ./hardhat:/app
       - /app/node_modules
-    # 依存先をanvilからgethに変更
     depends_on:
-      - geth
+      - geth # 依存先をgethに変更
     tty: true
     stdin_open: true
 
 volumes:
-  arlocal_data:
-  geth_data: # Gethのデータ保存用ボリュームを追加
+  geth_data: # Gethのデータ保存用ボリューム
+  arlocal_data: # ArLocalのデータ保存用ボリューム
