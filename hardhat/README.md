@@ -1,4 +1,4 @@
-# Hardhat Project Manager
+# Hardhat
 
 ## 📖 概要
 
