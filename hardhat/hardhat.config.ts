@@ -1,9 +1,15 @@
 import "@nomicfoundation/hardhat-ignition-ethers";
 import "@nomicfoundation/hardhat-toolbox";
+import 'esbuild-register/dist/node';
 import { HardhatUserConfig } from "hardhat/config";
 
+// タスクファイルをインポート
+import "./commands/tasks/compile";
+import "./commands/tasks/deploy";
+import "./commands/tasks/script";
+
 const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
+  defaultNetwork: "anvil",
   solidity: {
     version: "0.8.24",
     settings: {
@@ -15,18 +21,15 @@ const config: HardhatUserConfig = {
   },
 
   paths: {
-    sources: "./projects/**/contracts", // projects以下の全てのcontractsディレクトリを対象
+    sources: "./projects",
     tests: "./test",
     cache: "./dist/cache",
     artifacts: "./dist/artifacts",
+    ignition: "./dist/ignition",
   },
-
   networks: {
-    // "anvil" という名前でネットワーク設定を追加
     anvil: {
-      // localhostではなく、docker-composeのサービス名 "anvil" を指定
       url: "http://anvil:8545",
-      // Chain IDはAnvilのデフォルトである31337
       chainId: 31337,
     },
   },
