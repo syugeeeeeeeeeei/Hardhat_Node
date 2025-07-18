@@ -1,0 +1,2 @@
+ID,Test Case,Total Size (Bytes),Chunk Size (Bytes),Number of Chunks,Preprocessing Time (s),Upload Time (s),Download Time (s),Total Execution Time (s),Total Gas Used,Total Fee (ETH),Average Gas Per Tx
+100KB_24KB,Total: 100KB Chunk: 24KB,102400,24576,5,0.0002,6.0016,0.0445,6.0474,73289538,0.000000000586316304,12214923

@@ -1,3 +1,4 @@
+// hardhat/hardhat.config.ts
 import "@nomicfoundation/hardhat-ignition-ethers";
 import "@nomicfoundation/hardhat-toolbox";
 import "dotenv/config"; // dotenvをインポート
@@ -15,8 +16,8 @@ const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "0xac0974bec39a
 
 
 const config: HardhatUserConfig = {
-  // デフォルトの接続先をgethに変更
-  defaultNetwork: "geth",
+  // .envのDEFAULT_NETWORKを優先し、なければgethをデフォルトにする
+  defaultNetwork: process.env.DEFAULT_NETWORK || "geth",
   solidity: {
     version: "0.8.24",
     settings: {
@@ -39,7 +40,7 @@ const config: HardhatUserConfig = {
     geth: {
       url: "http://geth:8545", // docker-composeのサービス名を指定
       chainId: 1337, // genesis.jsonで指定したChain ID
-      accounts: [DEPLOYER_PRIVATE_KEY],
+      // accounts: [DEPLOYER_PRIVATE_KEY],
     },
     // Anvilへの接続設定を修正
     anvil: {
@@ -48,6 +49,8 @@ const config: HardhatUserConfig = {
       accounts: [DEPLOYER_PRIVATE_KEY],
       timeout: 30 * 60 * 1000
     },
+    // hardhat networkはローカルテスト用に常時存在
+    hardhat: {},
   },
 };
 

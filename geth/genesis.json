@@ -13,9 +13,16 @@
     "londonBlock": 0,
     "shanghaiBlock": 0,
     "terminalTotalDifficulty": 0,
-    "baseFeePerGas": "0"
+    "baseFeePerGas": "0x2540be400"
   },
-  "difficulty": "1",
-  "gasLimit": "8000000",
-  "alloc": {}
+  "difficulty": "0",
+  "gasLimit": "800000000000",
+  "alloc": {
+    "0x71562b71999873db5b286df957af199ec94617f7":{
+      "balance": "10000000000000000000000"
+    },
+    "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266":{
+      "balance": "10000000000000000000000"
+    }
+  }
 }

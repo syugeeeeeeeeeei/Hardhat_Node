@@ -1,3 +1,4 @@
+// hardhat/commands/tasks/script.ts
 import chalk from "chalk";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -30,9 +31,11 @@ task("run-script", "特定のプロジェクトのスクリプトを実行しま
 			console.log(chalk.green('\n✨ Hardhat スクリプトが正常に完了しました！'));
 
 		} catch (error: any) {
-			console.error(chalk.red(`\n🔴 スクリプトの実行中にエラーが発生しました: ${error.message}`));
+			// ✨ エラー出力の詳細化
+			console.error(chalk.red(`\n🔴 スクリプトの実行中にエラーが発生しました。`));
+			console.error(chalk.red('エラー内容:'), error.message);
 			if (error.stack) {
-				console.error(error.stack);
+				console.error(chalk.gray(error.stack));
 			}
 			process.exit(1);
 		}

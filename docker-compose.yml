@@ -4,44 +4,60 @@ services:
     image: ethereum/client-go:stable
     container_name: local_geth
     ports:
-      - "8545:8545" # RPCポート
-      - "30303:30303" # P2Pポート
+      - "8545:8545"       # HTTP-RPC
+      - "8546:8546"       # WS-RPC
+      - "30303:30303"     # P2P (TCP)
+      - "30303:30303/udp" # P2P (UDP)
     volumes:
-      - geth_data:/root/.ethereum # ブロックチェーンデータを永続化
-      - ./geth/genesis.json:/root/genesis.json # ジェネシスファイルをマウント
-    # ✨ entrypointを明示的に指定し、commandをシェルスクリプトとして渡す
-    entrypoint: /bin/sh
+      - geth_data:/root/.ethereum
+      - ./geth/genesis.json:/root/genesis.json
+      - ./geth/entrypoint.sh:/usr/local/bin/entrypoint.sh
+    entrypoint: /usr/local/bin/entrypoint.sh
     command:
-      - -c
-      - >-
-        if [ ! -d /root/.ethereum/geth ]; then
-          geth --datadir /root/.ethereum init /root/genesis.json;
-        fi &&
-        geth --datadir /root/.ethereum
-          --dev
-          --dev.period 1
-          --http
-          --http.addr '0.0.0.0'
-          --http.port 8545
-          --http.corsdomain '*'
-          --http.api 'eth,net,web3,personal'
-          --ws
-          --ws.addr '0.0.0.0'
-          --ws.port 8546
-          --ws.origins '*'
-          --ws.api 'eth,net,web3,personal'
+      - --verbosity
+      - "2" 
+      - --datadir
+      - /root/.ethereum
+      - --dev
+      - --dev.period
+      - "1"
+      # --- HTTP RPC ---
+      - --http
+      - --http.addr
+      - "0.0.0.0"
+      - --http.port
+      - "8545"
+      - --http.corsdomain
+      - "*"
+      - --http.vhosts
+      - "*"
+      - --http.api
+      - "eth,net,web3"
+      # --- WebSocket RPC ---
+      - --ws
+      - --ws.addr
+      - "0.0.0.0"
+      - --ws.port
+      - "8546"
+      - --ws.origins
+      - "*"
+      - --ws.api
+      - "eth,net,web3"
+      # --- その他 ---
+      - --authrpc.port
+      - "0" # 認証RPC(8551ポート)を無効化
 
   # Foundry Anvil サービス
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
     container_name: local_anvil
     ports:
-      - "8546:8545" # ポートをGethと重複しないように変更
-    # ✨ entrypointとcommandの記述をより厳密な形式に修正
+      # ✅ Gethとポートが競合しないようにホスト側ポートを 8544 に変更
+      - "8544:8545"
     entrypoint: /bin/sh
     command:
       - -c
-      - "anvil --host 0.0.0.0 --block-base-fee-per-gas 0 -q"
+      - "anvil --host 0.0.0.0 --block-base-fee-per-gas 0"
 
   # ArLocal サービス
   arlocal:
@@ -59,7 +75,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    # ✨ entrypointを明示的に指定し、commandをシェルスクリプトとして渡す
     entrypoint: /bin/sh
     command:
       - -c
@@ -81,5 +96,5 @@ services:
     stdin_open: true
 
 volumes:
-  geth_data: # Gethのデータ保存用ボリューム
-  arlocal_data: # ArLocalのデータ保存用ボリューム
+  geth_data: {} # Gethのデータ保存用ボリューム
+  arlocal_data: {} # ArLocalのデータ保存用ボリューム
