@@ -1,4 +1,7 @@
 #!/bin/sh
+
+# 権限が無いとexec /usr/local/bin/entrypoint.sh: no such file or directoryみたいなエラー出るよ！
+
 # エラーが発生した場合はスクリプトを終了する
 set -e
 
