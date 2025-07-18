@@ -12,6 +12,7 @@ services:
       - geth_data:/root/.ethereum
       - ./geth/genesis.json:/root/genesis.json
       - ./geth/entrypoint.sh:/usr/local/bin/entrypoint.sh
+
     entrypoint: /usr/local/bin/entrypoint.sh
     command:
       - --verbosity

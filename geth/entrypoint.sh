@@ -1,6 +1,7 @@
 #!/bin/sh
 
-# 権限が無いとexec /usr/local/bin/entrypoint.sh: no such file or directoryみたいなエラー出るよ！
+# 改行コードがCRLFになっているとexec /usr/local/bin/entrypoint.sh: no such file or directoryというエラーが出る
+# 改行コードはLFに変換してね
 
 # エラーが発生した場合はスクリプトを終了する
 set -e
